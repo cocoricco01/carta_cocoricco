@@ -97,7 +97,7 @@ const DEFAULT_PRODUCTS: ProductItem[] = [
     sizeDetail: '12 oz • 4 Toppings + 3 Jarabes',
     description: 'Tamaño supremo con abundante fresa seleccionada, crema de autor y combinación gigante de toppings.',
     price: 12.0,
-    image: './assets/fresas-12oz.jpg',
+    image: '/assets/fresas-real-12oz.jpg',
     badge: '👑 12 oz Mega',
     inStock: true,
     maxToppings: 4,
@@ -111,7 +111,7 @@ const DEFAULT_PRODUCTS: ProductItem[] = [
     sizeDetail: '10 oz • 4 Toppings + 3 Jarabes',
     description: 'Doble capa de fresas frescas con abundante crema batida de la casa. Incluye 4 toppings y 3 jarabes.',
     price: 10.0,
-    image: './assets/fresas-10oz.jpg',
+    image: '/assets/fresas-real-10oz.jpg',
     badge: '🔥 10 oz',
     inStock: true,
     maxToppings: 4,
@@ -125,7 +125,7 @@ const DEFAULT_PRODUCTS: ProductItem[] = [
     sizeDetail: '8 oz • 2 Toppings + 2 Jarabes',
     description: 'La porción perfecta de fresas dulces con crema artesanal. Incluye 2 toppings y 2 jarabes a tu elección.',
     price: 8.0,
-    image: './assets/fresas-8oz.jpg',
+    image: '/assets/fresas-real-8oz.jpg',
     badge: '⭐ Más Pedido',
     inStock: true,
     maxToppings: 2,
@@ -139,7 +139,7 @@ const DEFAULT_PRODUCTS: ProductItem[] = [
     sizeDetail: '5 oz • Vaso Personal',
     description: 'Fresas frescas del día con crema artesanal batida, chispas y jalea dulce.',
     price: 5.0,
-    image: './assets/fresas-5oz.jpg',
+    image: '/assets/fresas-real-5oz.jpg',
     badge: '🍓 5 oz',
     inStock: true,
     maxToppings: 1,
@@ -155,7 +155,7 @@ const DEFAULT_PRODUCTS: ProductItem[] = [
     sizeDetail: 'Servido en coco 100% natural',
     description: 'Helado artesanal ultra cremoso servido directamente en cáscara real de coco con topping a elección.',
     price: 12.0,
-    image: './assets/helado-coco-natural.jpg',
+    image: '/assets/coco-natural-real.jpg',
     badge: '🥥 100% Coco Real',
     inStock: true,
     maxToppings: 2,
@@ -169,7 +169,7 @@ const DEFAULT_PRODUCTS: ProductItem[] = [
     sizeDetail: 'Servido en coco natural',
     description: 'Helado artesanal en coco bañado con jalea y semillas naturales de maracuyá agridulce.',
     price: 12.0,
-    image: './assets/helado-coco-maracuya.jpg',
+    image: '/assets/coco-maracuya-real.jpg',
     badge: '🔥 Tropical',
     inStock: true,
     maxToppings: 2,
@@ -185,7 +185,7 @@ const DEFAULT_PRODUCTS: ProductItem[] = [
     sizeDetail: 'Centro de Fudge Casero',
     description: 'Helado cremoso con centro fluido de fudge de chocolate oscuro casero.',
     price: 6.0,
-    image: './assets/paleta-fudge.jpg',
+    image: '/assets/paleta-fudge-real.jpg',
     badge: '🍫 Fudge',
     inStock: true,
     nestleOption: false,
@@ -198,7 +198,7 @@ const DEFAULT_PRODUCTS: ProductItem[] = [
     sizeDetail: 'Con o Sin Leche Nestlé',
     description: 'Helado cremoso con trozos de galleta Oreo original y opción de relleno Nestlé.',
     price: 6.0,
-    image: './assets/paleta-oreo-poster.jpg',
+    image: '/assets/paleta-oreo-real.jpg',
     badge: '🍪 Oreo',
     inStock: true,
     nestleOption: true,
@@ -211,7 +211,7 @@ const DEFAULT_PRODUCTS: ProductItem[] = [
     sizeDetail: 'Con o Sin Leche Nestlé',
     description: 'Paleta de coco natural. Disponible rellena con leche Nestlé adentro o pura fruta sin leche.',
     price: 6.0,
-    image: './assets/paleta-coco-poster.jpg',
+    image: '/assets/paleta-coco-real.jpg',
     badge: '🥥 Coco',
     inStock: true,
     nestleOption: true,
@@ -224,7 +224,7 @@ const DEFAULT_PRODUCTS: ProductItem[] = [
     sizeDetail: 'Con o Sin Leche Nestlé',
     description: 'Paleta artesanal de arándanos frescos con corazón de leche Nestlé adentro o 100% fruta.',
     price: 6.0,
-    image: './assets/paleta-arandano-poster.jpg',
+    image: '/assets/paleta-arandano-real.jpg',
     badge: '🫐 Arándano',
     inStock: true,
     nestleOption: true,
@@ -237,7 +237,7 @@ const DEFAULT_PRODUCTS: ProductItem[] = [
     sizeDetail: 'Con o Sin Leche Nestlé',
     description: 'Pura lúcuma de seda en paleta cremosa. Disponible rellena con leche Nestlé o sin leche.',
     price: 6.0,
-    image: './assets/paleta-lucuma-poster.jpg',
+    image: '/assets/paleta-lucuma-real.jpg',
     badge: '✨ Lúcuma',
     inStock: true,
     nestleOption: true,
@@ -250,7 +250,7 @@ const DEFAULT_PRODUCTS: ProductItem[] = [
     sizeDetail: '100% Pulpa de Mango Natural',
     description: 'Paleta artesanal refrescante elaborada con pulpa 100% natural de mango de selección.',
     price: 6.0,
-    image: './assets/paleta-mango.jpg',
+    image: '/assets/paleta-mango-real.jpg',
     badge: '🥭 Mango Natural',
     inStock: true,
     nestleOption: false,
@@ -328,7 +328,7 @@ export default function App() {
 
   const handleVerifyPassword = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (passwordInput === '1234') {
+    if (passwordInput === 'cocoricco2027') {
       setIsAuthenticated(true);
       setIsAuthModalOpen(false);
       setIsAdminOpen(true);
@@ -1269,7 +1269,7 @@ export default function App() {
                 <div className="relative mb-3">
                   <input
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="PIN (1234)"
+                    placeholder="Contraseña Admin"
                     value={passwordInput}
                     onChange={(e) => setPasswordInput(e.target.value)}
                     className="w-full text-center text-lg tracking-widest font-black p-3 rounded-2xl border border-[#351C13] bg-[#24130C] text-[#FFF5EB] focus:outline-none focus:border-[#E84A5F]"
