@@ -1,26 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Sparkles,
   Phone,
-  Clock,
   Sliders,
-  Store,
-  ChevronRight,
   RefreshCw,
-  Heart,
-  Check,
   X,
-  Info,
-  Layers,
   Lock,
-  Unlock,
   Eye,
   EyeOff,
-  ShieldCheck,
-  LogOut,
-  Milk
+  Milk,
+  ShoppingCart,
+  MapPin,
+  Send,
+  Plus,
+  Minus,
+  Trash2,
+  Sparkles,
+  ShoppingBag,
+  Info,
+  CreditCard,
+  Banknote,
+  Smartphone,
+  ChevronRight
 } from 'lucide-react';
+
+// =============================================================
+// 📱 CONFIGURACIÓN DEL NÚMERO DEL BOT (DESTINO DE PEDIDOS Y WEB)
+// =============================================================
+// Cambia este número si deseas enviar los pedidos a otro WhatsApp:
+export const BOT_WHATSAPP_NUMBER = '51965691363'; // Con el 51 de Perú
+export const BOT_WHATSAPP_DISPLAY = '965 691 363'; // Formato visual de la barra superior
+// =============================================================
 
 interface ProductItem {
   id: string;
@@ -33,187 +43,215 @@ interface ProductItem {
   badge?: string;
   inStock: boolean;
   toppings: string[];
-  nestleOption?: boolean; // Indicates if available with or without Nestlé milk inside
+  maxToppings?: number;
+  maxSyrups?: number;
+  nestleOption?: boolean;
 }
+
+interface CartItem {
+  id: string;
+  productId: string;
+  name: string;
+  sizeDetail: string;
+  price: number;
+  quantity: number;
+  selectedToppings: string[];
+  selectedSyrups: string[];
+  nestleChoice?: 'con' | 'sin';
+  notes?: string;
+}
+
+const OFFICIAL_TOPPINGS = [
+  'Chinchin',
+  'Chocobombas',
+  'Gomitas en Aro',
+  'Gomitas Osito',
+  'Gomitas Gusanito',
+  'Gomitas en Cono',
+  'Grajeas',
+  'Chispas chocolate negro',
+  'Chispas chocolate blanco',
+  'Coco rayado',
+  'Maní tostado',
+  'Mini bombom',
+  'Gomitas de perita',
+  'Gomitas ácidas',
+  'Galleta de Oreo',
+  'Galleta Doña Pepa',
+  'Casino menta'
+];
+
+const OFFICIAL_SYRUPS = [
+  'Fudge Casero Artesanal',
+  'Leche Condensada Cremosa',
+  'Chantilly de la Casa',
+  'Jalea de Fresa Natural'
+];
 
 const DEFAULT_PRODUCTS: ProductItem[] = [
   // FRESAS CON CREMA
   {
-    id: 'fresas-especial-oreo-mm',
-    name: 'Vaso Especial Coco Ricco (Oreo & M&M)',
+    id: 'fresas-vaso-12oz',
+    name: 'Fresas con Crema — 12 oz Mega',
     category: 'fresas',
-    sizeDetail: 'Vaso Especial 12 oz con Toppings Premium',
-    description: 'Nuestra creación estrella: abundantes fresas frescas, crema de la casa, coronado con galleta Oreo, M&M, gomitas y salsa fudge.',
+    sizeDetail: '12 oz • 4 Toppings + 3 Jarabes',
+    description: 'Tamaño supremo con abundante fresa seleccionada, crema de autor y combinación gigante de toppings.',
     price: 12.0,
-    image: '/assets/fresas-especial-oreo.jpg',
-    badge: '⭐ Especial de la Casa',
+    image: './assets/fresas-12oz.jpg',
+    badge: '👑 12 oz Mega',
     inStock: true,
-    toppings: ['Galleta Oreo', 'M&M Chocolates', 'Gomitas', 'Fudge de Chocolate', 'Crema de Autor']
-  },
-  {
-    id: 'fresas-vaso-5oz',
-    name: 'Fresas con Crema — Vaso 5 oz',
-    category: 'fresas',
-    sizeDetail: 'Medida 5 oz (Vaso Personal)',
-    description: 'Fresas frescas seleccionadas del día, crema artesanal batida de la casa y salsa dulce.',
-    price: 5.0,
-    image: '/assets/fresas-5oz.jpg',
-    badge: '🍓 Vaso 5 oz',
-    inStock: true,
-    toppings: ['Crema Chantilly', 'Leche Condensada', 'Fudge de Chocolate']
-  },
-  {
-    id: 'fresas-vaso-8oz',
-    name: 'Fresas con Crema — Vaso 8 oz',
-    category: 'fresas',
-    sizeDetail: 'Medida 8 oz (Vaso Mediano)',
-    description: 'Generosa porción de fresas frescas con capas de crema especial y coulis de fresa natural.',
-    price: 8.0,
-    image: '/assets/fresas-8oz.jpg',
-    badge: '⭐ El Más Pedido',
-    inStock: true,
-    toppings: ['Nutella', 'Fudge Artesanal', 'Leche Condensada', 'Chantilly Extra']
+    maxToppings: 4,
+    maxSyrups: 3,
+    toppings: OFFICIAL_TOPPINGS
   },
   {
     id: 'fresas-vaso-10oz',
-    name: 'Fresas con Crema — Vaso 10 oz',
+    name: 'Fresas con Crema — 10 oz Especial',
     category: 'fresas',
-    sizeDetail: 'Medida 10 oz (Vaso Especial)',
-    description: 'Doble capa de fresas y crema artesanal con trozos de brownie y chispas de chocolate.',
+    sizeDetail: '10 oz • 4 Toppings + 3 Jarabes',
+    description: 'Doble capa de fresas frescas con abundante crema batida de la casa. Incluye 4 toppings y 3 jarabes.',
     price: 10.0,
-    image: '/assets/fresas-10oz.jpg',
-    badge: '🔥 Vaso 10 oz',
+    image: './assets/fresas-10oz.jpg',
+    badge: '🔥 10 oz',
     inStock: true,
-    toppings: ['Brownie Bits', 'Nutella', 'Fudge Casero', 'Leche Condensada']
+    maxToppings: 4,
+    maxSyrups: 3,
+    toppings: OFFICIAL_TOPPINGS
   },
   {
-    id: 'fresas-vaso-12oz',
-    name: 'Fresas con Crema — Vaso 12 oz',
+    id: 'fresas-vaso-8oz',
+    name: 'Fresas con Crema — 8 oz Mediano',
     category: 'fresas',
-    sizeDetail: 'Medida 12 oz (Vaso Familiar Mega)',
-    description: 'El tamaño supremo: abundante fresa, crema de autor, todos los toppings y coronado con chocolate.',
-    price: 12.0,
-    image: '/assets/fresas-12oz.jpg',
-    badge: '👑 Vaso 12 oz Mega',
+    sizeDetail: '8 oz • 2 Toppings + 2 Jarabes',
+    description: 'La porción perfecta de fresas dulces con crema artesanal. Incluye 2 toppings y 2 jarabes a tu elección.',
+    price: 8.0,
+    image: './assets/fresas-8oz.jpg',
+    badge: '⭐ Más Pedido',
     inStock: true,
-    toppings: ['Nutella Premium', 'Brownie', 'Fudge', 'Chispas', 'Chantilly']
+    maxToppings: 2,
+    maxSyrups: 2,
+    toppings: OFFICIAL_TOPPINGS
+  },
+  {
+    id: 'fresas-vaso-5oz',
+    name: 'Fresas con Crema — 5 oz Personal',
+    category: 'fresas',
+    sizeDetail: '5 oz • Vaso Personal',
+    description: 'Fresas frescas del día con crema artesanal batida, chispas y jalea dulce.',
+    price: 5.0,
+    image: './assets/fresas-5oz.jpg',
+    badge: '🍓 5 oz',
+    inStock: true,
+    maxToppings: 1,
+    maxSyrups: 1,
+    toppings: ['Chispas de Chocolate', 'Fudge Casero', 'Leche Condensada', 'Chantilly']
   },
 
-  // HELADOS EN TAZÓN DE COCO
+  // HELADOS EN TAZÓN DE COCO REAL
   {
     id: 'helado-coco-natural-bowl',
     name: 'Helado en Tazón de Coco Natural',
     category: 'coco_bowl',
-    sizeDetail: 'Servido en cáscara real de coco',
-    description: 'Helado artesanal ultra cremoso servido en coco natural con sticker Coco Ricco y topping a elección.',
+    sizeDetail: 'Servido en coco 100% natural',
+    description: 'Helado artesanal ultra cremoso servido directamente en cáscara real de coco con topping a elección.',
     price: 12.0,
-    image: '/assets/helado-coco-natural.jpg',
+    image: './assets/helado-coco-natural.jpg',
     badge: '🥥 100% Coco Real',
     inStock: true,
-    toppings: ['Sirope de Maracuyá', 'Fudge de Chocolate', 'Coco Rallado', 'Leche Condensada']
+    maxToppings: 2,
+    maxSyrups: 2,
+    toppings: ['Coco Rallado', 'Fudge Casero', 'Leche Condensada', 'Maní Tostado']
   },
   {
     id: 'helado-coco-maracuya-bowl',
-    name: 'Helado en Coco con Jalea de Maracuyá',
+    name: 'Helado en Coco + Maracuyá',
     category: 'coco_bowl',
-    sizeDetail: 'Servido en cáscara real de coco',
-    description: 'Helado artesanal en tazón de coco bañado con jalea y semillas naturales de maracuyá agridulce.',
+    sizeDetail: 'Servido en coco natural',
+    description: 'Helado artesanal en coco bañado con jalea y semillas naturales de maracuyá agridulce.',
     price: 12.0,
-    image: '/assets/helado-coco-maracuya.jpg',
-    badge: '🔥 Favorito Tropical',
+    image: './assets/helado-coco-maracuya.jpg',
+    badge: '🔥 Tropical',
     inStock: true,
-    toppings: ['Extra Maracuyá', 'Fudge Artesanal', 'Leche Condensada']
-  },
-
-  // HELADO EN COPA
-  {
-    id: 'helado-copa-artesanal',
-    name: 'Helado Artesanal en Copa (2 Bolas)',
-    category: 'helados',
-    sizeDetail: '2 Bolas generosas de helado',
-    description: 'Helado 100% natural de pura fruta. Sabores: Fresa, Maracuyá, Mango, Lúcuma, Chocolate Belga o Vainilla.',
-    price: 8.0,
-    image: '/assets/helado-copa-artesanal.jpg',
-    badge: '🍨 2 Bolas Artesanales',
-    inStock: true,
-    toppings: ['Fudge de Chocolate', 'Chispas de Colores', 'Barquillo', 'Manjar Blanco']
+    maxToppings: 2,
+    maxSyrups: 2,
+    toppings: ['Sirope Maracuyá', 'Coco Rallado', 'Fudge Casero', 'Leche Condensada']
   },
 
   // PALETAS ARTESANALES (CON O SIN LECHE NESTLÉ)
   {
-    id: 'paleta-coco-nestle',
-    name: 'Helado / Paleta de Coco',
-    category: 'paletas',
-    sizeDetail: 'Opción: Con Leche Nestlé o Sin Leche',
-    description: 'Deliciosa paleta de coco natural sobre coco rallado fresco. Pídela rellena con leche condensada Nestlé por dentro o pura fruta sin leche.',
-    price: 6.0,
-    image: '/assets/paleta-coco-poster.jpg',
-    badge: '🥥 Clásico Coco Ricco',
-    inStock: true,
-    nestleOption: true,
-    toppings: ['Disponible CON Leche Nestlé', 'Disponible SIN Leche Nestlé']
-  },
-  {
-    id: 'paleta-arandano-nestle',
-    name: 'Helado / Paleta de Arándano',
-    category: 'paletas',
-    sizeDetail: 'Opción: Con Leche Nestlé o Sin Leche',
-    description: 'Paleta artesanal de arándanos frescos seleccionados. Disponible con corazón líquido de leche Nestlé adentro o 100% fruta natural.',
-    price: 6.0,
-    image: '/assets/paleta-arandano-poster.jpg',
-    badge: '🫐 Frutos Rojos',
-    inStock: true,
-    nestleOption: true,
-    toppings: ['Disponible CON Leche Nestlé', 'Disponible SIN Leche Nestlé']
-  },
-  {
-    id: 'paleta-lucuma-nestle',
-    name: 'Helado / Paleta de Lúcuma',
-    category: 'paletas',
-    sizeDetail: 'Opción: Con Leche Nestlé o Sin Leche',
-    description: 'Pura lúcuma de seda en una paleta ultra cremosa. Disponible rellena con leche Nestlé o estilo tradicional.',
-    price: 6.0,
-    image: '/assets/paleta-lucuma-poster.jpg',
-    badge: '✨ Lúcuma de Seda',
-    inStock: true,
-    nestleOption: true,
-    toppings: ['Disponible CON Leche Nestlé', 'Disponible SIN Leche Nestlé']
-  },
-  {
-    id: 'paleta-oreo-nestle',
-    name: 'Helado / Paleta de Oreo',
-    category: 'paletas',
-    sizeDetail: 'Opción: Con Leche Nestlé o Sin Leche',
-    description: 'Cremoso helado con trocitos crocantes de galleta Oreo original. Disponible con relleno de leche Nestlé.',
-    price: 6.0,
-    image: '/assets/paleta-oreo-poster.jpg',
-    badge: '🍪 Oreo Lover',
-    inStock: true,
-    nestleOption: true,
-    toppings: ['Disponible CON Leche Nestlé', 'Disponible SIN Leche Nestlé']
-  },
-  {
     id: 'paleta-fudge-artesanal',
-    name: 'Paleta Rellena de Fudge de Chocolate',
+    name: 'Paleta Rellena de Fudge',
     category: 'paletas',
-    sizeDetail: 'Paleta artesanal rellena',
-    description: 'Pura fruta natural con centro cremoso de fudge de chocolate oscuro casero.',
+    sizeDetail: 'Centro de Fudge Casero',
+    description: 'Helado cremoso con centro fluido de fudge de chocolate oscuro casero.',
     price: 6.0,
-    image: '/assets/paleta-fudge.jpg',
-    badge: '🍫 Choco Lover',
+    image: './assets/paleta-fudge.jpg',
+    badge: '🍫 Fudge',
     inStock: true,
     nestleOption: false,
     toppings: ['Centro de Fudge Casero']
   },
   {
-    id: 'paleta-tropical-mango-aguaje',
-    name: 'Paleta Tropical de Mango / Aguaje',
+    id: 'paleta-oreo-nestle',
+    name: 'Paleta de Oreo',
     category: 'paletas',
-    sizeDetail: 'Paleta 100% pulpa de fruta',
-    description: 'Paleta artesanal refrescante a base de frutos tropicales y amazónicos sin conservantes.',
+    sizeDetail: 'Con o Sin Leche Nestlé',
+    description: 'Helado cremoso con trozos de galleta Oreo original y opción de relleno Nestlé.',
     price: 6.0,
-    image: '/assets/paleta-mango.jpg',
-    badge: '🌴 Fruta Natural',
+    image: './assets/paleta-oreo-poster.jpg',
+    badge: '🍪 Oreo',
+    inStock: true,
+    nestleOption: true,
+    toppings: ['Con Leche Nestlé', 'Sin Leche Nestlé (Pura Fruta)']
+  },
+  {
+    id: 'paleta-coco-nestle',
+    name: 'Paleta de Coco',
+    category: 'paletas',
+    sizeDetail: 'Con o Sin Leche Nestlé',
+    description: 'Paleta de coco natural. Disponible rellena con leche Nestlé adentro o pura fruta sin leche.',
+    price: 6.0,
+    image: './assets/paleta-coco-poster.jpg',
+    badge: '🥥 Coco',
+    inStock: true,
+    nestleOption: true,
+    toppings: ['Con Leche Nestlé', 'Sin Leche Nestlé']
+  },
+  {
+    id: 'paleta-arandano-nestle',
+    name: 'Paleta de Arándano',
+    category: 'paletas',
+    sizeDetail: 'Con o Sin Leche Nestlé',
+    description: 'Paleta artesanal de arándanos frescos con corazón de leche Nestlé adentro o 100% fruta.',
+    price: 6.0,
+    image: './assets/paleta-arandano-poster.jpg',
+    badge: '🫐 Arándano',
+    inStock: true,
+    nestleOption: true,
+    toppings: ['Con Leche Nestlé', 'Sin Leche Nestlé']
+  },
+  {
+    id: 'paleta-lucuma-nestle',
+    name: 'Paleta de Lúcuma',
+    category: 'paletas',
+    sizeDetail: 'Con o Sin Leche Nestlé',
+    description: 'Pura lúcuma de seda en paleta cremosa. Disponible rellena con leche Nestlé o sin leche.',
+    price: 6.0,
+    image: './assets/paleta-lucuma-poster.jpg',
+    badge: '✨ Lúcuma',
+    inStock: true,
+    nestleOption: true,
+    toppings: ['Con Leche Nestlé', 'Sin Leche Nestlé']
+  },
+  {
+    id: 'paleta-tropical-mango-aguaje',
+    name: 'Helado de Mango',
+    category: 'paletas',
+    sizeDetail: '100% Pulpa de Mango Natural',
+    description: 'Paleta artesanal refrescante elaborada con pulpa 100% natural de mango de selección.',
+    price: 6.0,
+    image: './assets/paleta-mango.jpg',
+    badge: '🥭 Mango Natural',
     inStock: true,
     nestleOption: false,
     toppings: ['Pulpa 100% Natural']
@@ -223,18 +261,42 @@ const DEFAULT_PRODUCTS: ProductItem[] = [
 export default function App() {
   const [products, setProducts] = useState<ProductItem[]>(DEFAULT_PRODUCTS);
   const [activeCategory, setActiveCategory] = useState<string>('todos');
+  const [appMode, setAppMode] = useState<'catalogo' | 'delivery'>('catalogo');
+  
+  // Cart & Delivery state
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [customizingProduct, setCustomizingProduct] = useState<ProductItem | null>(null);
+  const [tempToppings, setTempToppings] = useState<string[]>([]);
+  const [tempSyrups, setTempSyrups] = useState<string[]>([]);
+  const [tempNestle, setTempNestle] = useState<'con' | 'sin'>('con');
+  const [tempNotes, setTempNotes] = useState('');
+  const [tempQty, setTempQty] = useState(1);
+
+  // Delivery Form
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [customerAddress, setCustomerAddress] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<'Yape' | 'Plin' | 'Efectivo Contra Entrega' | 'Tarjeta Contra Entrega'>('Yape');
+  const [cashAmount, setCashAmount] = useState('');
+
+  // Admin state
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState('');
-  const [saveSuccessNotification, setSaveSuccessNotification] = useState(false);
   const [selectedProductView, setSelectedProductView] = useState<ProductItem | null>(null);
 
-  // Load from localStorage on startup
+  // Check URL query on mount
   useEffect(() => {
-    const saved = localStorage.getItem('cocoricco_carta_v5');
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('mode') === 'delivery') {
+      setAppMode('delivery');
+    }
+
+    const saved = localStorage.getItem('cocoricco_carta_v9');
     if (saved) {
       try {
         setProducts(JSON.parse(saved));
@@ -246,16 +308,12 @@ export default function App() {
 
   const saveCatalog = (updated: ProductItem[]) => {
     setProducts(updated);
-    localStorage.setItem('cocoricco_carta_v5', JSON.stringify(updated));
-    setSaveSuccessNotification(true);
-    setTimeout(() => setSaveSuccessNotification(false), 2500);
+    localStorage.setItem('cocoricco_carta_v9', JSON.stringify(updated));
   };
 
   const resetToDefault = () => {
     setProducts(DEFAULT_PRODUCTS);
-    localStorage.setItem('cocoricco_carta_v5', JSON.stringify(DEFAULT_PRODUCTS));
-    setSaveSuccessNotification(true);
-    setTimeout(() => setSaveSuccessNotification(false), 2500);
+    localStorage.setItem('cocoricco_carta_v9', JSON.stringify(DEFAULT_PRODUCTS));
   };
 
   const handleOpenAdmin = () => {
@@ -270,583 +328,918 @@ export default function App() {
 
   const handleVerifyPassword = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    const cleanPass = passwordInput.trim().toLowerCase();
-    
-    if (cleanPass === 'cocorico2026' || cleanPass === 'cocoricco2026') {
+    if (passwordInput === '1234') {
       setIsAuthenticated(true);
       setIsAuthModalOpen(false);
       setIsAdminOpen(true);
       setAuthError('');
     } else {
-      setAuthError('Contraseña incorrecta. Solo acceso para el administrador de Coco Ricco.');
+      setAuthError('Contraseña incorrecta. Inténtalo de nuevo.');
     }
   };
 
-  const handleLogoutAdmin = () => {
-    setIsAuthenticated(false);
-    setIsAdminOpen(false);
+  const toggleStock = (id: string) => {
+    const updated = products.map((p) =>
+      p.id === id ? { ...p, inStock: !p.inStock } : p
+    );
+    saveCatalog(updated);
   };
 
-  const filteredProducts = activeCategory === 'todos'
-    ? products
-    : products.filter(p => p.category === activeCategory);
+  const updatePrice = (id: string, newPrice: number) => {
+    const updated = products.map((p) =>
+      p.id === id ? { ...p, price: newPrice } : p
+    );
+    saveCatalog(updated);
+  };
+
+  // Customization & Cart handlers
+  const openCustomizer = (product: ProductItem) => {
+    setCustomizingProduct(product);
+    setTempToppings([]);
+    setTempSyrups([]);
+    setTempNestle('con');
+    setTempNotes('');
+    setTempQty(1);
+  };
+
+  const toggleTopping = (topping: string, max: number) => {
+    if (tempToppings.includes(topping)) {
+      setTempToppings(tempToppings.filter((t) => t !== topping));
+    } else {
+      if (tempToppings.length < max) {
+        setTempToppings([...tempToppings, topping]);
+      }
+    }
+  };
+
+  const toggleSyrup = (syrup: string, max: number) => {
+    if (tempSyrups.includes(syrup)) {
+      setTempSyrups(tempSyrups.filter((s) => s !== syrup));
+    } else {
+      if (tempSyrups.length < max) {
+        setTempSyrups([...tempSyrups, syrup]);
+      }
+    }
+  };
+
+  const addToCart = () => {
+    if (!customizingProduct) return;
+    const newItem: CartItem = {
+      id: `${customizingProduct.id}-${Date.now()}`,
+      productId: customizingProduct.id,
+      name: customizingProduct.name,
+      sizeDetail: customizingProduct.sizeDetail,
+      price: customizingProduct.price,
+      quantity: tempQty,
+      selectedToppings: tempToppings,
+      selectedSyrups: tempSyrups,
+      nestleChoice: customizingProduct.nestleOption ? tempNestle : undefined,
+      notes: tempNotes
+    };
+    setCart([...cart, newItem]);
+    setCustomizingProduct(null);
+    setIsCartOpen(true);
+  };
+
+  const removeFromCart = (id: string) => {
+    setCart(cart.filter((item) => item.id !== id));
+  };
+
+  const updateCartQty = (id: string, delta: number) => {
+    setCart(
+      cart
+        .map((item) => {
+          if (item.id === id) {
+            const newQty = item.quantity + delta;
+            return newQty > 0 ? { ...item, quantity: newQty } : null;
+          }
+          return item;
+        })
+        .filter(Boolean) as CartItem[]
+    );
+  };
+
+  const cartTotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
+
+  // Send WhatsApp Order
+  const handleSendOrderWhatsApp = () => {
+    if (cart.length === 0) {
+      alert('Tu carrito está vacío. Agrega al menos un producto.');
+      return;
+    }
+    if (!customerAddress.trim()) {
+      alert('Por favor, ingresa tu dirección exacta de entrega en Jaén.');
+      return;
+    }
+
+    let itemsText = '';
+    cart.forEach((it, idx) => {
+      itemsText += `\n${idx + 1}. *${it.quantity}x ${it.name}* (S/. ${(it.price * it.quantity).toFixed(2)})`;
+      if (it.selectedToppings.length > 0) {
+        itemsText += `\n   • Toppings: ${it.selectedToppings.join(', ')}`;
+      }
+      if (it.selectedSyrups.length > 0) {
+        itemsText += `\n   • Jarabes: ${it.selectedSyrups.join(', ')}`;
+      }
+      if (it.nestleChoice) {
+        itemsText += `\n   • Opción: ${it.nestleChoice === 'con' ? 'Con Leche Nestlé' : 'Sin Leche (Pura Fruta)'}`;
+      }
+      if (it.notes) {
+        itemsText += `\n   • Nota: ${it.notes}`;
+      }
+    });
+
+    let paymentText: string = paymentMethod;
+    if (paymentMethod === 'Efectivo Contra Entrega') {
+      paymentText = `Efectivo Contra Entrega ${cashAmount ? `(Paga con billete de S/. ${cashAmount})` : ''}`;
+    } else if (paymentMethod === 'Yape') {
+      paymentText = 'Yape (938 955 940)';
+    } else if (paymentMethod === 'Plin') {
+      paymentText = 'Plin (938 955 940)';
+    }
+
+    const message =
+`🛵 *PEDIDO DE DELIVERY — COCO RICCO* 🍓✨
+
+📍 *Dirección de Entrega:* ${customerAddress.trim()}
+👤 *Cliente:* ${customerName.trim() || 'Cliente'}
+📞 *Teléfono de Contacto:* ${customerPhone.trim() || 'El de este WhatsApp'}
+💵 *Método de Pago:* ${paymentText}
+
+🍧 *PRODUCTOS SOLICITADOS:*${itemsText}
+
+💰 *TOTAL A PAGAR:* S/. ${cartTotal.toFixed(2)}
+
+👉 *Por favor registrar mi orden, validar stock y despachar al motorizado.* 🛵💨`;
+
+    const encoded = encodeURIComponent(message);
+    window.open(`https://wa.me/${BOT_WHATSAPP_NUMBER}?text=${encoded}`, '_blank');
+  };
+
+  const filteredProducts = products.filter((p) => {
+    if (activeCategory === 'todos') return true;
+    if (activeCategory === 'fresas') return p.category === 'fresas';
+    if (activeCategory === 'coco_bowl') return p.category === 'coco_bowl';
+    if (activeCategory === 'paletas') return p.category === 'paletas';
+    return true;
+  });
 
   return (
-    <div className="min-h-screen bg-[#09110d] text-slate-100 font-sans selection:bg-rose-500 selection:text-white">
-      {/* Background Ambient Glows */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute -top-32 -left-32 w-[500px] h-[500px] bg-lime-500/10 rounded-full blur-[150px]" />
-        <div className="absolute top-1/3 -right-32 w-[500px] h-[500px] bg-rose-500/10 rounded-full blur-[150px]" />
-        <div className="absolute -bottom-20 left-1/3 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[160px]" />
+    <div className="min-h-screen bg-[#120A07] text-[#FFF5EB] font-sans selection:bg-[#E84A5F] selection:text-white pb-28">
+      {/* TOP NOTIFICATION BAR */}
+      <div className="bg-[#0A0503] text-[#E0D0C5] px-4 py-2 text-xs md:text-sm font-medium flex items-center justify-between border-b border-[#2A1710]">
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span className="text-[#D6C7BC]">🍓 Fresas con Crema, Helados en Coco & Paletas • Jaén</span>
+        </div>
+        <div className="flex items-center gap-4">
+          <a
+            href={`https://wa.me/${BOT_WHATSAPP_NUMBER}`}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-1.5 text-amber-400 hover:text-amber-300 font-bold transition-colors"
+          >
+            <Phone size={14} />
+            <span className="hidden sm:inline">WhatsApp:</span> {BOT_WHATSAPP_DISPLAY}
+          </a>
+          <button
+            onClick={handleOpenAdmin}
+            className="text-xs bg-[#24130C] hover:bg-[#341B12] px-2.5 py-1 rounded-lg text-amber-200/80 border border-[#3D2015] flex items-center gap-1 transition-colors"
+          >
+            <Sliders size={12} />
+            <span className="hidden md:inline">Admin</span>
+          </button>
+        </div>
       </div>
 
-      {/* Top Banner */}
-      <div className="relative z-20 bg-gradient-to-r from-lime-600 via-rose-600 to-lime-600 text-white text-xs sm:text-sm font-semibold py-2 px-4 text-center shadow-md flex items-center justify-center gap-2">
-        <Sparkles className="w-4 h-4 animate-spin" />
-        <span>¡Lo natural hecho helado! • Carta Virtual Oficial Coco Ricco • Jaén</span>
-        <Sparkles className="w-4 h-4 animate-spin" />
-      </div>
-
-      {/* Navigation Header */}
-      <header className="sticky top-0 z-40 backdrop-blur-xl bg-[#09110d]/90 border-b border-white/10 px-4 sm:px-8 py-3.5 transition-all">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          {/* Brand Logo */}
+      {/* HEADER WITH NATIVE DARK MINIMALIST TOGGLE */}
+      <header className="sticky top-0 z-40 bg-[#160D09]/95 backdrop-blur-md border-b border-[#2E1811] px-4 py-3 shadow-md">
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-2xl overflow-hidden bg-white/10 p-1 border border-lime-400/40 shadow-[0_0_20px_rgba(132,204,22,0.25)] flex items-center justify-center">
-              <img
-                src="/assets/logo.png"
-                alt="Logo Coco Ricco"
-                className="w-full h-full object-contain"
-              />
+            <div className="w-11 h-11 rounded-full overflow-hidden border-2 border-[#E84A5F]/80 shadow-md bg-[#24130C] p-0.5">
+              <img src="./assets/logo.png" alt="Coco Ricco Logo" className="w-full h-full object-contain" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-black tracking-tight bg-gradient-to-r from-lime-400 via-white to-rose-400 bg-clip-text text-transparent">
-                  COCO RICCO
-                </h1>
-                <span className="bg-lime-500/20 text-lime-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-lime-500/30">
-                  Carta Virtual
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 hidden sm:block">
-                Heladería Artesanal & Fresas con Crema • Jaén
-              </p>
+              <h1 className="text-xl md:text-2xl font-black tracking-tight text-[#FFF5EB] flex items-center gap-1.5">
+                COCO RICCO <span className="text-[#E84A5F]">🍓</span>
+              </h1>
+              <p className="text-[11px] text-[#A69085] font-medium">Fresas con Crema & Heladería Artesanal</p>
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center gap-3">
-            {/* Admin Dashboard Trigger */}
+          {/* MODE TOGGLE: CARTA vs DELIVERY */}
+          <div className="flex items-center bg-[#22130D] p-1 rounded-2xl border border-[#3A1F16]">
             <button
-              onClick={handleOpenAdmin}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-slate-300 hover:text-white transition-all shadow-sm group"
-              title="Panel de Control para editar precios y stock (Requiere Contraseña)"
+              onClick={() => setAppMode('catalogo')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                appMode === 'catalogo'
+                  ? 'bg-[#3D2015] text-amber-200 shadow-sm border border-amber-500/20'
+                  : 'text-[#968075] hover:text-[#FFF5EB]'
+              }`}
             >
-              {isAuthenticated ? (
-                <Unlock className="w-4 h-4 text-lime-400" />
-              ) : (
-                <Lock className="w-4 h-4 text-lime-400 group-hover:scale-110 transition-transform" />
-              )}
-              <span className="hidden sm:inline">
-                {isAuthenticated ? 'Panel Dueño (Abierto)' : 'Panel Dueño (Precios)'}
-              </span>
+              📋 Carta
             </button>
-
-            {/* WhatsApp Contact */}
-            <a
-              href="https://wa.me/51938955940?text=Hola%20Coco%20Ricco,%20vi%20su%20Carta%20Virtual%20y%20deseo%20hacer%20una%20consulta"
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white font-bold text-xs shadow-[0_0_20px_rgba(16,185,129,0.35)] transition-transform active:scale-95"
+            <button
+              onClick={() => setAppMode('delivery')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+                appMode === 'delivery'
+                  ? 'bg-[#E84A5F] text-white shadow-md'
+                  : 'text-[#968075] hover:text-[#E84A5F]'
+              }`}
             >
-              <Phone className="w-3.5 h-3.5" />
-              <span>WhatsApp</span>
-            </a>
+              🛵 Delivery
+              {cart.length > 0 && (
+                <span className="bg-white text-[#E84A5F] px-1.5 py-0.2 rounded-full text-[10px] font-black">
+                  {cart.length}
+                </span>
+              )}
+            </button>
           </div>
         </div>
       </header>
 
-      {/* Hero Showcase Section */}
-      <section className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 pt-8 pb-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          {/* Left Description */}
-          <div className="lg:col-span-7 space-y-4">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs font-semibold">
-              <Heart className="w-3.5 h-3.5 fill-rose-500 text-rose-500" />
-              <span>Fresas Seleccionadas • Crema de Autor • Helados y Paletas 100% Naturales</span>
-            </div>
-
-            <h2 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight text-white">
-              Carta Virtual de <span className="bg-gradient-to-r from-rose-400 to-pink-400 bg-clip-text text-transparent">Fresas con Crema</span>, Paletas y Helados en <span className="text-lime-400">Tazón de Coco</span>
+      {/* HERO BANNER */}
+      <section className="max-w-6xl mx-auto px-4 pt-5 pb-3">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#20100A] via-[#331910] to-[#20100A] border border-[#3E2016] text-[#FFF5EB] p-6 md:p-8 shadow-2xl">
+          <div className="relative z-10 max-w-xl">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E84A5F]/20 text-[#FF758F] border border-[#E84A5F]/40 text-xs font-bold tracking-wide uppercase mb-3">
+              <Sparkles size={13} className="text-[#FF758F]" /> {appMode === 'delivery' ? 'Delivery Express Jaén' : 'Recetas 100% Artesanales'}
+            </span>
+            <h2 className="text-2xl md:text-3xl font-black leading-tight mb-2 text-[#FFF5EB]">
+              {appMode === 'delivery' ? (
+                <>Arma tu pedido y recíbelo en tu puerta 🛵🍓</>
+              ) : (
+                <>Fresas seleccionadas con crema y helados reales 🍨✨</>
+              )}
             </h2>
-
-            <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-xl">
-              Disfruta de nuestros vasitos de fresas en medidas de <strong>5 oz, 8 oz, 10 oz y 12 oz</strong>, helados servidos en <strong>tazón de coco natural (S/ 12.00)</strong> y paletas artesanales (S/ 6.00) con opción de <strong>leche Nestlé adentro o sin leche Nestlé</strong>.
+            <p className="text-[#C4B2A7] text-xs md:text-sm mb-4">
+              {appMode === 'delivery'
+                ? 'Elige tus vasos, selecciona tus toppings favoritos, coloca tu dirección y te lo despachamos en 20-30 min.'
+                : '17 toppings oficiales, cáscaras reales de coco y paletas rellenas con leche Nestlé.'}
             </p>
-
-            <div className="flex flex-wrap items-center gap-3 pt-2">
-              <a
-                href="#carta"
-                className="px-5 py-2.5 rounded-xl bg-lime-500 hover:bg-lime-400 text-slate-950 font-black text-sm shadow-[0_0_20px_rgba(132,204,22,0.4)] transition-all flex items-center gap-2"
+            {appMode === 'catalogo' ? (
+              <button
+                onClick={() => setAppMode('delivery')}
+                className="bg-[#E84A5F] hover:bg-[#D43B50] text-white font-bold px-5 py-2.5 rounded-2xl text-xs md:text-sm flex items-center gap-2 shadow-lg transition-all"
               >
-                <span>Ver Productos y Precios</span>
-                <ChevronRight className="w-4 h-4" />
-              </a>
-
-              <div className="flex items-center gap-4 text-xs text-slate-400 px-3.5 py-2 rounded-xl bg-white/5 border border-white/5">
-                <span className="flex items-center gap-1.5">
-                  <Clock className="w-4 h-4 text-lime-400" /> Atención en local & Delivery
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Store className="w-4 h-4 text-rose-400" /> Jaén, Perú
-                </span>
+                <ShoppingBag size={16} /> Hacer Pedido para Delivery
+              </button>
+            ) : (
+              <div className="flex items-center gap-2 text-xs text-amber-300 font-semibold bg-white/5 border border-white/10 px-3.5 py-1.5 rounded-xl backdrop-blur-sm w-fit">
+                <MapPin size={14} className="text-[#E84A5F]" /> Envíos a todo Jaén • Pagos con Yape/Plin o Contra Entrega
               </div>
-            </div>
-          </div>
-
-          {/* Right Showcase Banner */}
-          <div className="lg:col-span-5 relative">
-            <div className="relative rounded-3xl overflow-hidden border border-white/15 bg-slate-900/60 p-4 shadow-2xl backdrop-blur-sm">
-              <div className="relative aspect-[4/3] w-full rounded-2xl overflow-hidden border border-white/10 group">
-                <img
-                  src="/assets/banner-fresas.jpg"
-                  alt="Fresas con Crema Coco Ricco"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent flex flex-col justify-end p-4">
-                  <span className="text-lime-300 text-xs font-bold uppercase tracking-wider">¡El Sabor de la Casa!</span>
-                  <p className="text-white text-base font-bold">Fresas frescas con crema única, toppings y helados artesanales</p>
-                </div>
-              </div>
-
-              {/* Highlights */}
-              <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
-                <div className="p-2.5 rounded-xl bg-white/5 border border-white/5 flex items-center gap-2">
-                  <span className="text-xl">🥥</span>
-                  <div>
-                    <p className="font-bold text-white">Tazón de Coco</p>
-                    <p className="text-[10px] text-slate-400">S/. 12.00 en coco natural</p>
-                  </div>
-                </div>
-                <div className="p-2.5 rounded-xl bg-white/5 border border-white/5 flex items-center gap-2">
-                  <span className="text-xl">🍡</span>
-                  <div>
-                    <p className="font-bold text-white">Paletas Artesanales</p>
-                    <p className="text-[10px] text-slate-400">Con / Sin Leche Nestlé</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </section>
 
-      {/* Category Tabs */}
-      <section id="carta" className="sticky top-[69px] z-30 bg-[#09110d]/95 backdrop-blur-xl border-y border-white/10 py-3 px-4 sm:px-8">
-        <div className="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+      {/* CATEGORY FILTER */}
+      <section className="max-w-6xl mx-auto px-4 py-2 sticky top-[62px] z-30 bg-[#120A07]/90 backdrop-blur-md">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
           {[
-            { id: 'todos', label: '✨ Toda la Carta', icon: '🍨' },
-            { id: 'fresas', label: '🍓 Fresas con Crema & Vasitos', icon: '🍓' },
-            { id: 'coco_bowl', label: '🥥 Helado en Tazón de Coco (S/ 12)', icon: '🥥' },
-            { id: 'helados', label: '🍦 Helado en Copa 2 Bolas (S/ 8)', icon: '🍦' },
-            { id: 'paletas', label: '🍡 Paletas (Con / Sin Nestlé)', icon: '🍡' }
-          ].map(cat => (
+            { id: 'todos', label: '⭐ Todos los Productos' },
+            { id: 'fresas', label: '🍓 Fresas con Crema' },
+            { id: 'coco_bowl', label: '🥥 Helados en Coco' },
+            { id: 'paletas', label: '🍧 Paletas Artesanales' }
+          ].map((cat) => (
             <button
               key={cat.id}
               onClick={() => setActiveCategory(cat.id)}
-              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all flex items-center gap-2 ${
+              className={`px-4 py-2 rounded-2xl text-xs md:text-sm font-bold whitespace-nowrap transition-all ${
                 activeCategory === cat.id
-                  ? 'bg-gradient-to-r from-lime-500 to-emerald-500 text-slate-950 shadow-[0_0_15px_rgba(132,204,22,0.4)] scale-105'
-                  : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/5'
+                  ? 'bg-[#E84A5F] text-white shadow-md'
+                  : 'bg-[#22130D] text-[#A69085] hover:bg-[#2C1911] border border-[#351C14]'
               }`}
             >
-              <span>{cat.icon}</span>
-              <span>{cat.label}</span>
+              {cat.label}
             </button>
           ))}
         </div>
       </section>
 
-      {/* Product Visual Cards Grid */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-8 py-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredProducts.map(product => (
+      {/* PRODUCTS GRID */}
+      <main className="max-w-6xl mx-auto px-4 py-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredProducts.map((product) => (
             <motion.div
-              key={product.id}
               layout
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className={`group relative rounded-3xl overflow-hidden border transition-all duration-300 flex flex-col justify-between ${
-                product.inStock
-                  ? 'bg-slate-900/50 border-white/10 hover:border-lime-400/50 hover:shadow-[0_0_30px_rgba(132,204,22,0.15)]'
-                  : 'bg-slate-950/40 border-red-500/20 opacity-70'
+              key={product.id}
+              className={`group bg-[#1D100A] rounded-3xl overflow-hidden border border-[#331C13] shadow-lg hover:border-[#E84A5F]/40 transition-all flex flex-col justify-between ${
+                !product.inStock ? 'opacity-50 grayscale-[50%]' : ''
               }`}
             >
-              <div>
-                {/* Product Image */}
-                <div className="relative aspect-square w-full overflow-hidden bg-slate-950">
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-85" />
-
-                  {/* Badges */}
-                  <div className="absolute top-3 left-3 flex flex-col gap-1.5">
-                    {product.badge && (
-                      <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-500 text-white shadow-lg">
-                        {product.badge}
-                      </span>
-                    )}
-                    {product.nestleOption && (
-                      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/90 text-slate-950 shadow-md flex items-center gap-1">
-                        <Milk className="w-3 h-3" />
-                        <span>Con / Sin Nestlé</span>
-                      </span>
-                    )}
-                    {!product.inStock && (
-                      <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-red-600 text-white shadow-lg">
-                        Agotado
-                      </span>
-                    )}
+              {/* Image & Badge */}
+              <div
+                className="relative h-72 sm:h-80 bg-[#160D09] flex items-center justify-center p-2.5 overflow-hidden cursor-pointer"
+                onClick={() => setSelectedProductView(product)}
+              >
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 rounded-2xl drop-shadow-md"
+                />
+                {product.badge && (
+                  <span className="absolute top-3 left-3 bg-[#E84A5F] text-white text-xs font-black px-3 py-1 rounded-full shadow-md">
+                    {product.badge}
+                  </span>
+                )}
+                {!product.inStock && (
+                  <div className="absolute inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center rounded-2xl">
+                    <span className="bg-red-600 text-white font-black text-xs px-4 py-2 rounded-full uppercase tracking-wider shadow-lg">
+                      Agotado Temporalmente
+                    </span>
                   </div>
-
-                  {/* Price Tag */}
-                  <div className="absolute bottom-3 right-3 px-3.5 py-1.5 rounded-xl bg-lime-500 text-slate-950 font-black text-base shadow-xl flex items-center gap-1">
-                    <span>S/.</span>
-                    <span>{product.price.toFixed(2)}</span>
-                  </div>
-                </div>
-
-                {/* Content */}
-                <div className="p-5 space-y-2">
-                  <div className="flex items-center gap-1.5 text-[11px] font-bold text-lime-400">
-                    <Layers className="w-3.5 h-3.5" />
-                    <span>{product.sizeDetail}</span>
-                  </div>
-
-                  <h3 className="text-lg font-bold text-white group-hover:text-lime-300 transition-colors">
-                    {product.name}
-                  </h3>
-
-                  <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
-                    {product.description}
-                  </p>
-
-                  {/* Nestlé option pill */}
-                  {product.nestleOption && (
-                    <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-300 flex items-center gap-1.5">
-                      <Milk className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-                      <span>Disponible con <strong>leche Nestlé</strong> por dentro o <strong>sin leche</strong>.</span>
-                    </div>
-                  )}
-
-                  {/* Toppings tag list */}
-                  {product.toppings && product.toppings.length > 0 && !product.nestleOption && (
-                    <div className="pt-2">
-                      <p className="text-[10px] text-slate-400 uppercase font-semibold mb-1">Toppings incluidos / disponibles:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {product.toppings.map(t => (
-                          <span key={t} className="text-[10px] bg-white/5 border border-white/10 text-slate-300 px-2 py-0.5 rounded-md">
-                            {t}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
 
-              {/* Card Footer */}
-              <div className="p-5 pt-0">
-                <button
-                  onClick={() => setSelectedProductView(product)}
-                  className="w-full py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 bg-white/10 hover:bg-lime-500 hover:text-slate-950 text-white border border-white/10 hover:border-lime-400 transition-all active:scale-95"
-                >
-                  <Info className="w-4 h-4" />
-                  <span>Ver Detalles & Variantes</span>
-                </button>
+              {/* Info */}
+              <div className="p-5 flex-1 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-baseline justify-between mb-1.5">
+                    <h3 className="font-extrabold text-base md:text-lg text-[#FFF5EB] leading-tight">{product.name}</h3>
+                    <span className="text-xl font-black text-[#E84A5F] whitespace-nowrap ml-2">
+                      S/. {product.price.toFixed(2)}
+                    </span>
+                  </div>
+                  <span className="inline-block text-[11px] font-semibold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2.5 py-0.5 rounded-lg mb-2">
+                    {product.sizeDetail}
+                  </span>
+                  <p className="text-xs text-[#BAA79C] leading-relaxed mb-4">{product.description}</p>
+                </div>
+
+                {/* Toppings / Actions */}
+                <div className="pt-3 border-t border-[#2D1810]">
+                  {product.category === 'fresas' && (
+                    <div className="mb-3">
+                      <p className="text-[11px] font-bold text-amber-400/90 uppercase tracking-wider mb-0.5 flex items-center gap-1">
+                        <Sparkles size={12} className="text-amber-400" />
+                        Toppings & Jarabes incluidos:
+                      </p>
+                      <p className="text-xs text-[#D6C7BC] font-medium">
+                        {product.maxToppings} toppings + {product.maxSyrups} jarabes a elección
+                      </p>
+                    </div>
+                  )}
+
+                  {appMode === 'delivery' ? (
+                    <button
+                      disabled={!product.inStock}
+                      onClick={() => openCustomizer(product)}
+                      className={`w-full py-2.5 px-4 rounded-2xl font-bold text-xs md:text-sm flex items-center justify-center gap-2 shadow-sm transition-all ${
+                        product.inStock
+                          ? 'bg-[#E84A5F] hover:bg-[#D43B50] text-white shadow-md active:scale-98'
+                          : 'bg-stone-800 text-stone-500 cursor-not-allowed'
+                      }`}
+                    >
+                      <ShoppingCart size={16} /> Personalizar & Agregar
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setSelectedProductView(product)}
+                      className="w-full py-2.5 px-4 rounded-2xl font-bold text-xs text-[#FFF5EB] bg-[#2A160F] hover:bg-[#381D14] border border-[#3E2117] transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <Info size={15} className="text-amber-400" /> Ver Detalles & Fotos
+                    </button>
+                  )}
+                </div>
               </div>
             </motion.div>
           ))}
         </div>
       </main>
 
-      {/* Product Detail Modal */}
-      <AnimatePresence>
-        {selectedProductView && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-lg rounded-3xl bg-slate-900 border border-white/15 p-6 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col justify-between"
-            >
-              <button
-                onClick={() => setSelectedProductView(null)}
-                className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-all z-10"
-              >
-                <X className="w-5 h-5" />
-              </button>
-
-              <div className="overflow-y-auto space-y-4">
-                <div className="relative aspect-video w-full rounded-2xl overflow-hidden border border-white/10 bg-black">
-                  <img
-                    src={selectedProductView.image}
-                    alt={selectedProductView.name}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute bottom-3 left-3 px-3 py-1 rounded-xl bg-lime-500 text-slate-950 font-black text-base shadow-lg">
-                    S/. {selectedProductView.price.toFixed(2)}
-                  </div>
-                </div>
-
-                <div>
-                  <span className="text-xs text-lime-400 font-bold uppercase tracking-wider">{selectedProductView.sizeDetail}</span>
-                  <h3 className="text-xl font-bold text-white mt-0.5">{selectedProductView.name}</h3>
-                  <p className="text-xs text-slate-300 mt-2 leading-relaxed">{selectedProductView.description}</p>
-                </div>
-
-                {/* Nestlé option details in modal */}
-                {selectedProductView.nestleOption && (
-                  <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-2">
-                    <div className="flex items-center gap-2 text-xs font-bold text-amber-300">
-                      <Milk className="w-4 h-4 text-amber-400" />
-                      <span>Opciones de Preparación:</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="p-2 rounded-xl bg-black/40 border border-white/5 text-slate-300">
-                        <span className="font-bold text-lime-400 block">🥛 Con Leche Nestlé</span>
-                        <span className="text-[10px] text-slate-400">Rellena de abundante leche condensada por dentro</span>
-                      </div>
-                      <div className="p-2 rounded-xl bg-black/40 border border-white/5 text-slate-300">
-                        <span className="font-bold text-emerald-400 block">🍃 Sin Leche Nestlé</span>
-                        <span className="text-[10px] text-slate-400">Pura pulpa natural de fruta fresca</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {selectedProductView.toppings && selectedProductView.toppings.length > 0 && (
-                  <div className="space-y-1.5 pt-2 border-t border-white/10">
-                    <p className="text-xs font-bold text-rose-400 uppercase">Toppings y Salsas:</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {selectedProductView.toppings.map(t => (
-                        <span key={t} className="text-xs bg-rose-500/10 text-rose-300 border border-rose-500/20 px-2.5 py-1 rounded-lg font-medium">
-                          ✓ {t}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
+      {/* FLOATING CART BAR FOR MOBILE & DESKTOP (DELIVERY MODE) */}
+      {appMode === 'delivery' && cart.length > 0 && (
+        <motion.div
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="fixed bottom-4 left-0 right-0 z-40 max-w-lg mx-auto px-4"
+        >
+          <button
+            onClick={() => setIsCartOpen(true)}
+            className="w-full bg-[#E84A5F] hover:bg-[#D43B50] text-white p-3.5 rounded-2xl shadow-2xl flex items-center justify-between border border-white/20 transition-transform active:scale-95"
+          >
+            <div className="flex items-center gap-3">
+              <div className="bg-white/20 p-2 rounded-xl">
+                <ShoppingCart size={20} />
               </div>
-
-              <div className="pt-4 border-t border-white/10 mt-4 flex items-center justify-between">
-                <div>
-                  <span className="text-xs text-slate-400">Precio en Carta:</span>
-                  <p className="text-2xl font-black text-lime-400">S/. {selectedProductView.price.toFixed(2)}</p>
-                </div>
-                <button
-                  onClick={() => setSelectedProductView(null)}
-                  className="px-6 py-2.5 rounded-xl bg-lime-500 text-slate-950 font-black text-xs uppercase tracking-wider shadow-md hover:bg-lime-400"
-                >
-                  Cerrar
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Password Authentication Modal for Admin Panel */}
-      <AnimatePresence>
-        {isAuthModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 15 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 15 }}
-              className="relative w-full max-w-md rounded-3xl bg-slate-900 border border-lime-500/30 p-6 shadow-2xl overflow-hidden"
-            >
-              <button
-                onClick={() => setIsAuthModalOpen(false)}
-                className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-all"
-              >
-                <X className="w-5 h-5" />
-              </button>
-
-              <div className="text-center space-y-3 pt-2">
-                <div className="w-14 h-14 mx-auto rounded-2xl bg-lime-500/20 border border-lime-500/30 flex items-center justify-center text-lime-400 shadow-[0_0_20px_rgba(132,204,22,0.3)]">
-                  <Lock className="w-7 h-7" />
-                </div>
-
-                <h3 className="text-lg font-black text-white">Acceso Administrador</h3>
-                <p className="text-xs text-slate-400 max-w-xs mx-auto">
-                  Ingresa la contraseña de seguridad para acceder al Panel de Control de Precios y Stock de Coco Ricco.
+              <div className="text-left">
+                <p className="text-[11px] font-medium text-white/80">
+                  {cart.reduce((a, b) => a + b.quantity, 0)} ítem(s) en tu carrito
                 </p>
+                <p className="text-sm font-black">Continuar con mi Pedido</p>
               </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-base font-black bg-white text-[#E84A5F] px-3 py-1 rounded-xl shadow">
+                S/. {cartTotal.toFixed(2)}
+              </span>
+              <ChevronRight size={18} />
+            </div>
+          </button>
+        </motion.div>
+      )}
 
-              <form onSubmit={handleVerifyPassword} className="space-y-4 mt-6">
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Contraseña de administrador..."
-                    value={passwordInput}
-                    onChange={e => {
-                      setPasswordInput(e.target.value);
-                      if (authError) setAuthError('');
-                    }}
-                    autoFocus
-                    className="w-full px-4 py-3 pr-11 rounded-2xl bg-black/60 border border-white/15 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-lime-400 shadow-inner"
-                  />
+      {/* CUSTOMIZE MODAL (DARK MINIMAL) */}
+      <AnimatePresence>
+        {customizingProduct && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4">
+            <motion.div
+              initial={{ y: 100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 100, opacity: 0 }}
+              className="bg-[#1C100B] text-[#FFF5EB] border border-[#381F17] rounded-t-3xl sm:rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl flex flex-col justify-between"
+            >
+              <div>
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex gap-3">
+                    <img
+                      src={customizingProduct.image}
+                      alt={customizingProduct.name}
+                      className="w-16 h-16 rounded-2xl object-cover border border-[#381F17]"
+                    />
+                    <div>
+                      <h3 className="font-extrabold text-base md:text-lg text-[#FFF5EB]">{customizingProduct.name}</h3>
+                      <p className="text-xs text-[#A69085]">{customizingProduct.sizeDetail}</p>
+                      <p className="text-sm font-black text-[#E84A5F]">S/. {customizingProduct.price.toFixed(2)}</p>
+                    </div>
+                  </div>
                   <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1"
+                    onClick={() => setCustomizingProduct(null)}
+                    className="p-1 rounded-full bg-[#2A160F] text-[#C4B2A7] hover:bg-[#381D14]"
                   >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    <X size={18} />
                   </button>
                 </div>
 
-                {authError && (
-                  <p className="text-xs text-rose-400 font-semibold text-center bg-rose-500/10 border border-rose-500/20 py-2 px-3 rounded-xl">
-                    {authError}
-                  </p>
+                {/* TOPPINGS SELECTION */}
+                {customizingProduct.maxToppings && customizingProduct.maxToppings > 0 && (
+                  <div className="mb-5 bg-[#24130C] p-4 rounded-2xl border border-[#351C13]">
+                    <div className="flex justify-between items-center mb-2.5">
+                      <label className="text-xs font-black text-[#FFF5EB] uppercase tracking-wider">
+                        Elige tus Toppings ({tempToppings.length}/{customizingProduct.maxToppings})
+                      </label>
+                      <span className="text-[11px] text-amber-400 font-bold">
+                        Máx. {customizingProduct.maxToppings}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto pr-1">
+                      {OFFICIAL_TOPPINGS.map((top) => {
+                        const isSelected = tempToppings.includes(top);
+                        return (
+                          <button
+                            key={top}
+                            onClick={() => toggleTopping(top, customizingProduct.maxToppings || 2)}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                              isSelected
+                                ? 'bg-[#E84A5F] text-white shadow-sm'
+                                : 'bg-[#190C07] text-[#C4B2A7] border border-[#331B12] hover:border-[#E84A5F]/50'
+                            }`}
+                          >
+                            {isSelected ? '✓ ' : '+ '}
+                            {top}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 )}
 
+                {/* SYRUPS SELECTION */}
+                {customizingProduct.maxSyrups && customizingProduct.maxSyrups > 0 && (
+                  <div className="mb-5 bg-[#24130C] p-4 rounded-2xl border border-[#351C13]">
+                    <div className="flex justify-between items-center mb-2.5">
+                      <label className="text-xs font-black text-[#FFF5EB] uppercase tracking-wider">
+                        Elige tus Jarabes ({tempSyrups.length}/{customizingProduct.maxSyrups})
+                      </label>
+                      <span className="text-[11px] text-amber-400 font-bold">Máx. {customizingProduct.maxSyrups}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {OFFICIAL_SYRUPS.map((syr) => {
+                        const isSelected = tempSyrups.includes(syr);
+                        return (
+                          <button
+                            key={syr}
+                            onClick={() => toggleSyrup(syr, customizingProduct.maxSyrups || 2)}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                              isSelected
+                                ? 'bg-[#E84A5F] text-white shadow-sm'
+                                : 'bg-[#190C07] text-[#C4B2A7] border border-[#331B12] hover:border-[#E84A5F]/50'
+                            }`}
+                          >
+                            {isSelected ? '✓ ' : '+ '}
+                            {syr}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* PALETAS NESTLE OPTION */}
+                {customizingProduct.nestleOption && (
+                  <div className="mb-4 bg-[#24130C] p-4 rounded-2xl border border-[#351C13]">
+                    <label className="block text-xs font-black text-[#FFF5EB] uppercase tracking-wider mb-2">
+                      Tipo de Relleno
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => setTempNestle('con')}
+                        className={`p-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                          tempNestle === 'con'
+                            ? 'bg-[#E84A5F] text-white shadow-sm'
+                            : 'bg-[#190C07] text-[#C4B2A7] border border-[#331B12]'
+                        }`}
+                      >
+                        <Milk size={14} /> Con Leche Nestlé
+                      </button>
+                      <button
+                        onClick={() => setTempNestle('sin')}
+                        className={`p-2.5 rounded-xl text-xs font-bold transition-all ${
+                          tempNestle === 'sin'
+                            ? 'bg-[#E84A5F] text-white shadow-sm'
+                            : 'bg-[#190C07] text-[#C4B2A7] border border-[#331B12]'
+                        }`}
+                      >
+                        Pura Fruta (Sin Leche)
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* NOTES */}
+                <div className="mb-4">
+                  <label className="block text-xs font-bold text-[#A69085] mb-1">
+                    Instrucciones Especiales (Opcional):
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ej. Poco dulce, chantilly aparte, etc."
+                    value={tempNotes}
+                    onChange={(e) => setTempNotes(e.target.value)}
+                    className="w-full text-xs p-3 rounded-xl border border-[#351C13] bg-[#24130C] text-[#FFF5EB] focus:outline-none focus:border-[#E84A5F]"
+                  />
+                </div>
+              </div>
+
+              {/* QUANTITY & ADD BUTTON */}
+              <div className="pt-4 border-t border-[#2E1811] flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2 bg-[#24130C] px-3 py-1.5 rounded-2xl border border-[#351C13]">
+                  <button
+                    onClick={() => setTempQty(Math.max(1, tempQty - 1))}
+                    className="p-1 text-[#C4B2A7] hover:text-white"
+                  >
+                    <Minus size={16} />
+                  </button>
+                  <span className="font-black text-sm w-6 text-center text-[#FFF5EB]">{tempQty}</span>
+                  <button
+                    onClick={() => setTempQty(tempQty + 1)}
+                    className="p-1 text-[#C4B2A7] hover:text-white"
+                  >
+                    <Plus size={16} />
+                  </button>
+                </div>
+
                 <button
-                  type="submit"
-                  className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-lime-500 to-emerald-500 hover:from-lime-400 hover:to-emerald-400 text-slate-950 font-black text-xs uppercase tracking-wider shadow-[0_0_20px_rgba(132,204,22,0.4)] transition-transform active:scale-95 flex items-center justify-center gap-2"
+                  onClick={addToCart}
+                  className="flex-1 bg-[#E84A5F] hover:bg-[#D43B50] text-white font-bold py-3 px-4 rounded-2xl text-xs md:text-sm shadow-lg flex items-center justify-center gap-2"
                 >
-                  <ShieldCheck className="w-4 h-4" />
-                  <span>Desbloquear Panel</span>
+                  <ShoppingCart size={16} /> Agregar (S/. {(customizingProduct.price * tempQty).toFixed(2)})
                 </button>
-              </form>
+              </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
 
-      {/* Admin Panel Modal (Edit Prices & Stock in Real Time) */}
+      {/* CART & DELIVERY CHECKOUT MODAL (DRAWER OPTIMIZADO) */}
+      <AnimatePresence>
+        {isCartOpen && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4">
+            <motion.div
+              initial={{ y: 100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 100, opacity: 0 }}
+              className="bg-[#1C100B] text-[#FFF5EB] border border-[#381F17] rounded-t-3xl sm:rounded-3xl max-w-xl w-full max-h-[92vh] overflow-y-auto p-6 shadow-2xl flex flex-col justify-between"
+            >
+              <div>
+                <div className="flex items-center justify-between pb-3.5 border-b border-[#2E1811] mb-4">
+                  <h3 className="text-lg md:text-xl font-black text-[#FFF5EB] flex items-center gap-2">
+                    <ShoppingCart className="text-[#E84A5F]" /> Tu Pedido de Delivery
+                  </h3>
+                  <button
+                    onClick={() => setIsCartOpen(false)}
+                    className="p-1.5 rounded-full bg-[#2A160F] text-[#C4B2A7] hover:bg-[#381D14]"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                {/* CART ITEMS LIST */}
+                {cart.length === 0 ? (
+                  <div className="text-center py-10">
+                    <p className="text-sm text-[#A69085] font-medium mb-3">Tu carrito está vacío.</p>
+                    <button
+                      onClick={() => setIsCartOpen(false)}
+                      className="bg-[#E84A5F] text-white text-xs font-bold px-5 py-2.5 rounded-xl"
+                    >
+                      Explorar la Carta
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2.5 mb-5 max-h-56 overflow-y-auto pr-1">
+                    {cart.map((item) => (
+                      <div
+                        key={item.id}
+                        className="bg-[#24130C] p-3 rounded-2xl border border-[#351C13] flex items-center justify-between gap-3"
+                      >
+                        <div className="flex-1">
+                          <h4 className="text-xs font-black text-[#FFF5EB]">{item.name}</h4>
+                          <p className="text-[11px] text-[#A69085]">{item.sizeDetail}</p>
+                          {item.selectedToppings.length > 0 && (
+                            <p className="text-[10px] text-[#FF758F] font-bold">
+                              Toppings: {item.selectedToppings.join(', ')}
+                            </p>
+                          )}
+                          {item.selectedSyrups.length > 0 && (
+                            <p className="text-[10px] text-amber-300/90 font-semibold">
+                              Jarabes: {item.selectedSyrups.join(', ')}
+                            </p>
+                          )}
+                          {item.nestleChoice && (
+                            <p className="text-[10px] text-stone-300 font-semibold">
+                              {item.nestleChoice === 'con' ? '✓ Con Leche Nestlé' : '✓ Sin Leche'}
+                            </p>
+                          )}
+                          <p className="text-xs font-black text-[#E84A5F] mt-1">
+                            S/. {(item.price * item.quantity).toFixed(2)}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 bg-[#170C07] px-2 py-1 rounded-xl border border-[#331B12]">
+                          <button
+                            onClick={() => updateCartQty(item.id, -1)}
+                            className="text-[#C4B2A7] hover:text-white p-0.5"
+                          >
+                            <Minus size={13} />
+                          </button>
+                          <span className="text-xs font-black w-4 text-center text-[#FFF5EB]">{item.quantity}</span>
+                          <button
+                            onClick={() => updateCartQty(item.id, 1)}
+                            className="text-[#C4B2A7] hover:text-white p-0.5"
+                          >
+                            <Plus size={13} />
+                          </button>
+                        </div>
+
+                        <button
+                          onClick={() => removeFromCart(item.id)}
+                          className="text-red-400 hover:text-red-300 p-1"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* DELIVERY ADDRESS FORM */}
+                {cart.length > 0 && (
+                  <div className="space-y-3 pt-2 border-t border-[#2E1811]">
+                    <h4 className="text-xs font-black text-[#FFF5EB] uppercase tracking-wider flex items-center gap-1.5">
+                      <MapPin size={15} className="text-[#E84A5F]" /> Datos de Entrega en Jaén
+                    </h4>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <div>
+                        <label className="block text-[11px] font-bold text-[#A69085] mb-1">Tu Nombre:</label>
+                        <input
+                          type="text"
+                          placeholder="Ej. Juan Pérez"
+                          value={customerName}
+                          onChange={(e) => setCustomerName(e.target.value)}
+                          className="w-full text-xs p-2.5 rounded-xl border border-[#351C13] bg-[#24130C] text-[#FFF5EB] focus:outline-none focus:border-[#E84A5F]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-[#A69085] mb-1">Tu Teléfono:</label>
+                        <input
+                          type="tel"
+                          placeholder="Ej. 965 691 363"
+                          value={customerPhone}
+                          onChange={(e) => setCustomerPhone(e.target.value)}
+                          className="w-full text-xs p-2.5 rounded-xl border border-[#351C13] bg-[#24130C] text-[#FFF5EB] focus:outline-none focus:border-[#E84A5F]"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-black text-[#FF758F] mb-1">
+                        Dirección Exacta & Referencia en Jaén (*Obligatorio para Delivery):
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Ej. Jr. San Martín 450 (Frente al parque, portón marrón)"
+                        value={customerAddress}
+                        onChange={(e) => setCustomerAddress(e.target.value)}
+                        className="w-full text-xs p-3 rounded-xl border-2 border-[#E84A5F]/50 bg-[#24130C] text-[#FFF5EB] focus:outline-none focus:border-[#E84A5F] font-medium"
+                      />
+                    </div>
+
+                    {/* PAYMENT METHOD (INCLUYE CONTRA ENTREGA) */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-[#A69085] mb-1.5">Método de Pago:</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { id: 'Yape', label: '💳 Yape (938 955 940)', icon: Smartphone },
+                          { id: 'Plin', label: '📱 Plin (938 955 940)', icon: Smartphone },
+                          { id: 'Efectivo Contra Entrega', label: '💵 Efectivo Contra Entrega', icon: Banknote },
+                          { id: 'Tarjeta Contra Entrega', label: '💳 Tarjeta / POS Contra Entrega', icon: CreditCard }
+                        ].map((m) => {
+                          const isSel = paymentMethod === m.id;
+                          return (
+                            <button
+                              key={m.id}
+                              type="button"
+                              onClick={() => setPaymentMethod(m.id as any)}
+                              className={`p-2.5 rounded-xl text-[11px] font-bold text-left transition-all flex items-center gap-1.5 ${
+                                isSel
+                                  ? 'bg-[#E84A5F] text-white shadow-sm border border-white/20'
+                                  : 'bg-[#24130C] text-[#C4B2A7] border border-[#351C13] hover:border-[#E84A5F]/40'
+                              }`}
+                            >
+                              <m.icon size={14} className={isSel ? 'text-white' : 'text-amber-400'} />
+                              <span className="truncate">{m.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {paymentMethod === 'Efectivo Contra Entrega' && (
+                        <div className="mt-2.5 bg-[#24130C] p-2.5 rounded-xl border border-[#351C13]">
+                          <label className="block text-[11px] font-bold text-amber-300 mb-1">
+                            ¿Con cuánto vas a pagar? (Para que el motorizado lleve tu vuelto exacto):
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="Ej. S/ 20 o S/ 50"
+                            value={cashAmount}
+                            onChange={(e) => setCashAmount(e.target.value)}
+                            className="w-full text-xs p-2 rounded-lg border border-[#351C13] bg-[#170C07] text-[#FFF5EB] focus:outline-none focus:border-[#E84A5F]"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* TOTAL & CONFIRM BUTTON */}
+              {cart.length > 0 && (
+                <div className="pt-4 border-t border-[#2E1811] mt-4">
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-xs font-bold text-[#A69085]">Total a Pagar (Productos):</span>
+                    <span className="text-2xl font-black text-[#E84A5F]">S/. {cartTotal.toFixed(2)}</span>
+                  </div>
+
+                  <button
+                    onClick={handleSendOrderWhatsApp}
+                    className="w-full bg-[#25D366] hover:bg-[#1EBE5D] text-white font-black py-3.5 px-6 rounded-2xl text-sm shadow-xl flex items-center justify-center gap-2 transition-all transform active:scale-98"
+                  >
+                    <Send size={18} /> Confirmar y Enviar Pedido a WhatsApp
+                  </button>
+                  <p className="text-[10px] text-center text-[#A69085] mt-2 font-medium">
+                    ⚡ Nuestro Bot 24/7 procesará tu orden y notificará de inmediato al motorizado en Jaén.
+                  </p>
+                </div>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* DETAIL MODAL (CATALOG MODE) */}
+      <AnimatePresence>
+        {selectedProductView && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-[#1C100B] text-[#FFF5EB] border border-[#381F17] rounded-3xl max-w-md w-full overflow-hidden shadow-2xl"
+            >
+              <div className="relative h-80 sm:h-96 bg-[#160D09] flex items-center justify-center p-3 overflow-hidden">
+                <img
+                  src={selectedProductView.image}
+                  alt={selectedProductView.name}
+                  className="w-full h-full object-contain rounded-2xl"
+                />
+                <button
+                  onClick={() => setSelectedProductView(null)}
+                  className="absolute top-3 right-3 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 backdrop-blur-sm"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="p-6">
+                <div className="flex justify-between items-baseline mb-2">
+                  <h3 className="font-extrabold text-xl text-[#FFF5EB]">{selectedProductView.name}</h3>
+                  <span className="text-2xl font-black text-[#E84A5F]">
+                    S/. {selectedProductView.price.toFixed(2)}
+                  </span>
+                </div>
+                <p className="text-xs font-bold text-amber-400 mb-3">{selectedProductView.sizeDetail}</p>
+                <p className="text-sm text-[#C4B2A7] leading-relaxed mb-6">{selectedProductView.description}</p>
+
+                <button
+                  onClick={() => {
+                    setSelectedProductView(null);
+                    setAppMode('delivery');
+                    openCustomizer(selectedProductView);
+                  }}
+                  className="w-full bg-[#E84A5F] hover:bg-[#D43B50] text-white font-bold py-3 rounded-2xl text-sm flex items-center justify-center gap-2 shadow-lg"
+                >
+                  <ShoppingCart size={16} /> Pedir este Producto para Delivery
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ADMIN CONTROL PANEL */}
       <AnimatePresence>
         {isAdminOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-2xl rounded-3xl bg-slate-900 border border-lime-500/30 p-6 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col justify-between"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-[#1C100B] text-[#FFF5EB] rounded-3xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6 shadow-2xl border border-amber-500/30"
             >
-              {/* Header */}
-              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div className="flex items-center justify-between pb-4 border-b border-stone-800 mb-6">
                 <div className="flex items-center gap-2">
-                  <Sliders className="w-5 h-5 text-lime-400" />
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-black text-white">Panel de Control de Precios y Stock (Dueño)</h3>
-                      <span className="px-2 py-0.5 rounded-full bg-lime-500/20 text-lime-400 text-[10px] font-bold border border-lime-500/30">
-                        Sesión Activa
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-400">Modifica los precios y la disponibilidad en tiempo real para la carta virtual</p>
-                  </div>
+                  <Sliders className="text-amber-400" />
+                  <h3 className="font-black text-lg text-amber-300">Panel de Control & Precios (Dueño)</h3>
                 </div>
                 <button
                   onClick={() => setIsAdminOpen(false)}
-                  className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white"
+                  className="p-1 rounded-full bg-stone-800 text-stone-300 hover:bg-stone-700"
                 >
-                  <X className="w-5 h-5" />
+                  <X size={18} />
                 </button>
               </div>
 
-              {/* Notification badge */}
-              {saveSuccessNotification && (
-                <div className="my-2 p-2.5 rounded-xl bg-lime-500/20 border border-lime-500/40 text-lime-300 text-xs font-bold flex items-center gap-2">
-                  <Check className="w-4 h-4" />
-                  <span>¡Precios actualizados y guardados en la carta virtual al instante!</span>
-                </div>
-              )}
-
-              {/* Table of items */}
-              <div className="flex-1 overflow-y-auto py-4 space-y-3 pr-1">
-                {products.map((prod, pIdx) => (
+              <div className="space-y-4 mb-6">
+                {products.map((p) => (
                   <div
-                    key={prod.id}
-                    className="p-3.5 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-between gap-3"
+                    key={p.id}
+                    className="flex items-center justify-between p-3 rounded-2xl bg-stone-900/80 border border-stone-800 gap-3"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="relative w-11 h-11 rounded-xl overflow-hidden bg-black flex-shrink-0">
-                        <img src={prod.image} alt={prod.name} className="w-full h-full object-cover" />
-                      </div>
+                      <img src={p.image} alt={p.name} className="w-12 h-12 rounded-xl object-cover" />
                       <div>
-                        <h4 className="text-xs font-bold text-white">{prod.name}</h4>
-                        <span className="text-[10px] text-lime-400 font-semibold">{prod.sizeDetail}</span>
+                        <p className="text-xs font-bold text-white">{p.name}</p>
+                        <p className="text-[11px] text-stone-400">{p.sizeDetail}</p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3">
-                      {/* Price input */}
                       <div className="flex items-center gap-1">
-                        <span className="text-xs text-slate-400 font-bold">S/.</span>
+                        <span className="text-xs text-stone-400">S/.</span>
                         <input
                           type="number"
                           step="0.5"
-                          value={prod.price}
-                          onChange={e => {
-                            const updated = [...products];
-                            updated[pIdx].price = parseFloat(e.target.value) || 0;
-                            saveCatalog(updated);
-                          }}
-                          className="w-20 px-2.5 py-1.5 rounded-lg bg-black/60 border border-white/10 text-xs font-bold text-lime-400 focus:outline-none focus:border-lime-400"
+                          value={p.price}
+                          onChange={(e) => updatePrice(p.id, parseFloat(e.target.value) || 0)}
+                          className="w-16 bg-stone-800 border border-stone-700 rounded-lg text-xs font-bold p-1.5 text-center text-amber-300 focus:outline-none focus:border-amber-400"
                         />
                       </div>
 
-                      {/* Stock Switch */}
                       <button
-                        onClick={() => {
-                          const updated = [...products];
-                          updated[pIdx].inStock = !updated[pIdx].inStock;
-                          saveCatalog(updated);
-                        }}
-                        className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
-                          prod.inStock
-                            ? 'bg-lime-500/20 text-lime-400 border border-lime-500/30'
-                            : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                        onClick={() => toggleStock(p.id)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
+                          p.inStock ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'
                         }`}
                       >
-                        {prod.inStock ? '✓ Stock' : '✗ Agotado'}
+                        {p.inStock ? 'Disponible' : 'Agotado'}
                       </button>
                     </div>
                   </div>
                 ))}
               </div>
 
-              {/* Admin Footer */}
-              <div className="border-t border-white/10 pt-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={resetToDefault}
-                    className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs text-slate-400 hover:text-white flex items-center gap-1.5"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    <span>Restablecer Fábrica</span>
-                  </button>
-
-                  <button
-                    onClick={handleLogoutAdmin}
-                    className="px-3 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-300 border border-red-500/20 text-xs font-semibold flex items-center gap-1.5"
-                    title="Cerrar sesión de administrador"
-                  >
-                    <LogOut className="w-3.5 h-3.5" />
-                    <span>Cerrar Sesión</span>
-                  </button>
-                </div>
-
+              <div className="flex justify-between items-center pt-4 border-t border-stone-800">
+                <button
+                  onClick={resetToDefault}
+                  className="text-xs text-stone-400 hover:text-white flex items-center gap-1.5"
+                >
+                  <RefreshCw size={13} /> Restaurar Catálogo Original
+                </button>
                 <button
                   onClick={() => setIsAdminOpen(false)}
-                  className="px-6 py-2.5 rounded-xl bg-lime-500 text-slate-950 font-black text-xs uppercase tracking-wider shadow-md hover:bg-lime-400"
+                  className="bg-amber-400 hover:bg-amber-300 text-[#2C1810] font-black text-xs px-5 py-2.5 rounded-xl"
                 >
                   Guardar y Cerrar
                 </button>
@@ -856,20 +1249,62 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Footer */}
-      <footer className="relative z-10 border-t border-white/10 bg-slate-950 py-10 px-4 sm:px-8 mt-12 text-center text-xs text-slate-500 space-y-3">
-        <div className="flex items-center justify-center gap-2">
-          <span className="text-base font-black text-white">COCO RICCO</span>
-          <span className="text-slate-600">•</span>
-          <span className="text-lime-400 font-semibold">Heladería Artesanal & Fresas con Crema</span>
-        </div>
-        <p className="max-w-md mx-auto">
-          Jaén, Cajamarca, Perú • Consultas y Ubicación al WhatsApp <strong>938 955 940</strong>
-        </p>
-        <p className="text-[10px] text-slate-600">
-          © {new Date().getFullYear()} Coco Ricco. Todos los derechos reservados.
-        </p>
-      </footer>
+      {/* AUTH MODAL */}
+      <AnimatePresence>
+        {isAuthModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-[#1C100B] text-[#FFF5EB] border border-[#381F17] rounded-3xl max-w-sm w-full p-6 shadow-2xl text-center"
+            >
+              <div className="w-12 h-12 rounded-full bg-amber-400/20 text-amber-400 border border-amber-400/30 mx-auto flex items-center justify-center mb-3">
+                <Lock size={20} />
+              </div>
+              <h3 className="font-extrabold text-lg text-[#FFF5EB] mb-1">Acceso Administrativo</h3>
+              <p className="text-xs text-[#A69085] mb-4">Ingresa el PIN de administrador para editar precios.</p>
+
+              <form onSubmit={handleVerifyPassword}>
+                <div className="relative mb-3">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="PIN (1234)"
+                    value={passwordInput}
+                    onChange={(e) => setPasswordInput(e.target.value)}
+                    className="w-full text-center text-lg tracking-widest font-black p-3 rounded-2xl border border-[#351C13] bg-[#24130C] text-[#FFF5EB] focus:outline-none focus:border-[#E84A5F]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-3.5 text-stone-400 hover:text-stone-300"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+
+                {authError && <p className="text-xs text-red-400 font-bold mb-3">{authError}</p>}
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsAuthModalOpen(false)}
+                    className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-[#2A160F] text-stone-300 hover:bg-[#381D14]"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-[#E84A5F] text-white hover:bg-[#D43B50]"
+                  >
+                    Entrar
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
